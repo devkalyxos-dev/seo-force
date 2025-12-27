@@ -6,7 +6,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('blogs')
-    .select('*')
+    .select('*, articles(count)')
     .order('created_at', { ascending: false });
 
   if (error) {

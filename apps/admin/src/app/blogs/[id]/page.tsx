@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Blog {
@@ -33,8 +33,9 @@ const COLOR_PRESETS = [
   { name: 'Noir', value: '#171717' },
 ];
 
-export default function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function BlogDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [affiliateIds, setAffiliateIds] = useState<AffiliateId[]>([]);

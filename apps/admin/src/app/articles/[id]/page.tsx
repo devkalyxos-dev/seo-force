@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Article {
@@ -30,8 +30,9 @@ const CATEGORIES = [
   { value: 'tops', label: 'TOP' },
 ];
 
-export default function ArticleDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ArticleDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);

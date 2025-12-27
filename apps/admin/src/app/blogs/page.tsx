@@ -1,19 +1,44 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getSupabaseAdmin } from '@/lib/supabase';
 
-async function getBlogs() {
-  const supabase = getSupabaseAdmin();
-
-  const { data } = await supabase
-    .from('blogs')
-    .select('*, articles(count)')
-    .order('created_at', { ascending: false });
-
-  return data || [];
+interface Blog {
+  id: string;
+  name: string;
+  slug: string;
+  niche: string;
+  primary_color: string;
+  domain: string | null;
+  articles?: { count: number }[];
 }
 
-export default async function BlogsPage() {
-  const blogs = await getBlogs();
+export default function BlogsPage() {
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBlogs() {
+      try {
+        const response = await fetch('/api/blogs');
+        const data = await response.json();
+        setBlogs(data);
+      } catch (error) {
+        console.error('Error loading blogs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadBlogs();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="spinner" />
+      </div>
+    );
+  }
 
   return (
     <div>

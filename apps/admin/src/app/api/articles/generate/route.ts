@@ -97,10 +97,7 @@ export async function POST(request: NextRequest) {
         seo_description: generatedArticle.seoDescription,
         status: publish ? 'published' : 'draft',
         published_at: publish ? new Date().toISOString() : null,
-        amazon_products: products.map((p) => ({
-          asin: p.product_id,
-          title: p.title,
-        })),
+        product_ids: products.map((p) => p.id),
       })
       .select()
       .single();
