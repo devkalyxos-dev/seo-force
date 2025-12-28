@@ -1,9 +1,13 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ArticleCard, CategoryTabs, ArrowRightIcon } from '@/components';
-import { getBlog, getArticles } from '@/lib/supabase';
+import { getBlog, getArticlesWithImages } from '@/lib/supabase';
 import { getBlogConfig, CATEGORIES } from '@/lib/config';
 import Link from 'next/link';
+
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
@@ -23,6 +27,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   return {
     title: categoryInfo.label,
     description: `${categoryInfo.description} - ${blog?.name || 'Blog'}`,
+    alternates: {
+      canonical: `/${category}`,
+    },
+    openGraph: {
+      title: `${categoryInfo.label} | ${blog?.name || 'Blog'}`,
+      description: categoryInfo.description,
+      type: 'website',
+    },
   };
 }
 
@@ -47,10 +59,67 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     return null;
   }
 
-  const articles = await getArticles(blog.id, { category, limit: 12 });
+  const articles = await getArticlesWithImages(blog.id, { category, limit: 12 });
+
+  // Build JSON-LD structured data for category page
+  const baseUrl = blog.domain
+    ? `https://${blog.domain}`
+    : `https://${config.slug}.vercel.app`;
+
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: categoryInfo.label,
+    description: categoryInfo.description,
+    url: `${baseUrl}/${category}`,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: blog.name,
+      url: baseUrl,
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: articles.length,
+      itemListElement: articles.slice(0, 10).map((article, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${baseUrl}/${article.category}/${article.slug}`,
+        name: article.title,
+      })),
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: categoryInfo.label,
+        item: `${baseUrl}/${category}`,
+      },
+    ],
+  };
 
   return (
     <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
       {/* Hero */}
       <section className="pt-16 pb-12 md:pt-24 md:pb-16 border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-6">

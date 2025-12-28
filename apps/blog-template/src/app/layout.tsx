@@ -21,16 +21,25 @@ export async function generateMetadata(): Promise<Metadata> {
   const config = getBlogConfig();
   const blog = await getBlog(config.slug);
 
+  const baseUrl = blog?.domain
+    ? `https://${blog.domain}`
+    : `https://${config.slug}.vercel.app`;
+
   return {
+    metadataBase: new URL(baseUrl),
     title: {
       default: blog?.name || 'Blog',
       template: `%s | ${blog?.name || 'Blog'}`,
     },
     description: blog?.description || 'Découvrez nos guides, tests et comparatifs.',
+    alternates: {
+      canonical: '/',
+    },
     openGraph: {
       type: 'website',
       locale: 'fr_FR',
       siteName: blog?.name || 'Blog',
+      url: baseUrl,
     },
     twitter: {
       card: 'summary_large_image',
@@ -38,6 +47,13 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: {
       index: true,
       follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   };
 }
@@ -78,10 +94,50 @@ export default async function RootLayout({
   `
     : '';
 
+  // JSON-LD structured data for Organization and WebSite
+  const baseUrl = blog.domain
+    ? `https://${blog.domain}`
+    : `https://${config.slug}.vercel.app`;
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: blog.name,
+    url: baseUrl,
+    logo: blog.logo_url || `${baseUrl}/logo.png`,
+    description: blog.description,
+    sameAs: [],
+  };
+
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: blog.name,
+    url: baseUrl,
+    description: blog.description,
+    publisher: {
+      '@type': 'Organization',
+      name: blog.name,
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${baseUrl}/search?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} scroll-smooth`}>
       <head>
         {primaryColorStyles && <style dangerouslySetInnerHTML={{ __html: primaryColorStyles }} />}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
       </head>
       <body className="bg-white text-neutral-900 antialiased selection:bg-primary-100 selection:text-primary-900">
         <Header blog={blog} />

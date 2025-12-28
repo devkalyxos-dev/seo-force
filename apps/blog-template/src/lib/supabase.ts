@@ -239,3 +239,89 @@ export async function getAffiliateId(
 
   return data?.affiliate_id || null;
 }
+
+// Get all secondary product images for a blog (excluding primary images)
+export async function getProductSecondaryImages(blogId: string): Promise<string[]> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('images')
+    .eq('blog_id', blogId);
+
+  if (error || !data) {
+    console.error('Error fetching product images:', error);
+    return [];
+  }
+
+  // Collect all secondary images (skip the first image of each product)
+  const secondaryImages: string[] = [];
+  for (const product of data) {
+    if (product.images && Array.isArray(product.images) && product.images.length > 1) {
+      // Add images starting from index 1 (skip the main product image)
+      secondaryImages.push(...product.images.slice(1));
+    }
+  }
+
+  return secondaryImages;
+}
+
+// Simple hash function for deterministic randomness
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+// Enrich articles with product images
+export async function enrichArticlesWithImages(
+  blogId: string,
+  articles: Article[]
+): Promise<Article[]> {
+  // Get all secondary product images
+  const images = await getProductSecondaryImages(blogId);
+
+  if (images.length === 0) {
+    return articles;
+  }
+
+  // Assign an image to each article that doesn't have one
+  return articles.map((article) => {
+    if (article.featured_image) {
+      return article;
+    }
+
+    // Use article ID as seed for deterministic selection
+    const index = hashString(article.id) % images.length;
+    return {
+      ...article,
+      featured_image: images[index],
+    };
+  });
+}
+
+// Get articles with images
+export async function getArticlesWithImages(
+  blogId: string,
+  options?: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Article[]> {
+  const articles = await getArticles(blogId, options);
+  return enrichArticlesWithImages(blogId, articles);
+}
+
+// Get featured article with image
+export async function getFeaturedArticleWithImage(blogId: string): Promise<Article | null> {
+  const article = await getFeaturedArticle(blogId);
+  if (!article) return null;
+
+  const enriched = await enrichArticlesWithImages(blogId, [article]);
+  return enriched[0] || null;
+}
