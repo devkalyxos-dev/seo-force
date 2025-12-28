@@ -256,3 +256,65 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+// ============================================
+// NEWS (Actualités IA)
+// ============================================
+export type NewsCategory = 'economie' | 'juridique' | 'tendances' | 'tech' | 'lifestyle' | 'createurs';
+
+export interface News {
+  id: string;
+  blogId: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content?: string;
+  sourceTitle: string;
+  sourceUrl: string;
+  sourceDomain?: string;
+  sourcePublishedAt?: string;
+  category?: NewsCategory;
+  tags: string[];
+  featuredImage?: string;
+  isPublished: boolean;
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateNewsInput {
+  blogId: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content?: string;
+  sourceTitle: string;
+  sourceUrl: string;
+  sourceDomain?: string;
+  sourcePublishedAt?: string;
+  category?: NewsCategory;
+  tags?: string[];
+}
+
+export interface ScrapedNewsItem {
+  title: string;
+  url: string;
+  source: string;
+  snippet: string;
+  publishedAt?: string;
+}
+
+export interface GeneratedNewsSummary {
+  title: string;
+  slug: string;
+  summary: string;
+  category: NewsCategory;
+  tags: string[];
+  imageKeyword?: string;
+}
+
+export interface GenerateNewsParams {
+  blogId: string;
+  niche: string;
+  maxItems?: number;
+}

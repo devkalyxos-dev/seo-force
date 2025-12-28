@@ -307,3 +307,44 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER create_legal_pages_on_blog_create
   AFTER INSERT ON blogs
   FOR EACH ROW EXECUTE FUNCTION create_default_legal_pages();
+
+-- ============================================
+-- NEWS (Actualités générées par IA)
+-- ============================================
+CREATE TABLE news (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  blog_id UUID REFERENCES blogs(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  summary TEXT NOT NULL,                        -- Résumé généré par IA (200-400 caractères)
+  content TEXT,                                 -- Contenu étendu optionnel
+  source_title TEXT NOT NULL,                   -- Titre de la source originale
+  source_url TEXT NOT NULL,                     -- URL de la source (obligatoire)
+  source_domain TEXT,                           -- Ex: "lemonde.fr"
+  source_published_at TIMESTAMPTZ,              -- Date de publication source
+  category TEXT,                                -- 'economie', 'juridique', 'tendances', 'tech', 'lifestyle', 'createurs'
+  tags TEXT[] DEFAULT '{}',
+  featured_image TEXT,                          -- Image optionnelle
+  is_published BOOLEAN DEFAULT true,
+  published_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(blog_id, slug),
+  UNIQUE(blog_id, source_url)                   -- Éviter les doublons
+);
+
+-- Index pour performance
+CREATE INDEX idx_news_blog_id ON news(blog_id);
+CREATE INDEX idx_news_published_at ON news(published_at DESC);
+CREATE INDEX idx_news_category ON news(category);
+CREATE INDEX idx_news_source_domain ON news(source_domain);
+
+-- RLS Policy
+ALTER TABLE news ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "News publiées lisibles par tous" ON news
+  FOR SELECT USING (is_published = true);
+
+-- Trigger updated_at pour news
+CREATE TRIGGER update_news_updated_at
+  BEFORE UPDATE ON news
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();

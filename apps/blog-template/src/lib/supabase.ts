@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Blog, Article, Product, LegalPage } from '@seo-force/shared';
+import type { Blog, Article, Product, LegalPage, News } from '@seo-force/shared';
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -324,4 +324,121 @@ export async function getFeaturedArticleWithImage(blogId: string): Promise<Artic
 
   const enriched = await enrichArticlesWithImages(blogId, [article]);
   return enriched[0] || null;
+}
+
+// Count total published articles for pagination
+export async function getArticlesCount(
+  blogId: string,
+  options?: { category?: string }
+): Promise<number> {
+  const supabase = getSupabase();
+
+  let query = supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .eq('blog_id', blogId)
+    .eq('status', 'published');
+
+  if (options?.category) {
+    query = query.eq('category', options.category);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Error counting articles:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+// ============================================
+// NEWS (Actualités)
+// ============================================
+
+// Get published news for the blog
+export async function getNews(
+  blogId: string,
+  options?: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<News[]> {
+  const supabase = getSupabase();
+
+  let query = supabase
+    .from('news')
+    .select('*')
+    .eq('blog_id', blogId)
+    .eq('is_published', true)
+    .order('published_at', { ascending: false });
+
+  if (options?.category) {
+    query = query.eq('category', options.category);
+  }
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  if (options?.offset) {
+    query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching news:', error);
+    return [];
+  }
+
+  // Map snake_case to camelCase
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    blogId: item.blog_id,
+    title: item.title,
+    slug: item.slug,
+    summary: item.summary,
+    content: item.content,
+    sourceTitle: item.source_title,
+    sourceUrl: item.source_url,
+    sourceDomain: item.source_domain,
+    sourcePublishedAt: item.source_published_at,
+    category: item.category,
+    tags: item.tags || [],
+    featuredImage: item.featured_image,
+    isPublished: item.is_published,
+    publishedAt: item.published_at,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
+}
+
+// Count total published news for pagination
+export async function getNewsCount(
+  blogId: string,
+  options?: { category?: string }
+): Promise<number> {
+  const supabase = getSupabase();
+
+  let query = supabase
+    .from('news')
+    .select('*', { count: 'exact', head: true })
+    .eq('blog_id', blogId)
+    .eq('is_published', true);
+
+  if (options?.category) {
+    query = query.eq('category', options.category);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Error counting news:', error);
+    return 0;
+  }
+
+  return count || 0;
 }

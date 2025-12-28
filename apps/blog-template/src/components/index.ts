@@ -1,9 +1,12 @@
 export { Header } from './Header';
 export { Footer } from './Footer';
 export { ArticleCard } from './ArticleCard';
+export { LongScrollArticleCard } from './LongScrollArticleCard';
 export { ProductCard } from './ProductCard';
 export { ProductFilters } from './ProductFilters';
 export { Newsletter } from './Newsletter';
 export { CategoryTabs } from './CategoryTabs';
+export { Pagination } from './Pagination';
+export { NewsCard, NewsCardCompact } from './NewsCard';
 export * from './Icons';
 export * from './article';

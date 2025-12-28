@@ -30,6 +30,7 @@ export const NAV_LINKS = [
   { href: '/reviews', label: 'Reviews' },
   { href: '/guides', label: 'Guides' },
   { href: '/comparatifs', label: 'Comparatifs' },
+  { href: '/actualites', label: 'Actualités' },
   { href: '/produits', label: 'Produits' },
 ] as const;
 
@@ -40,6 +41,7 @@ export const FOOTER_LINKS = {
     { href: '/reviews', label: 'Reviews' },
     { href: '/guides', label: 'Guides' },
     { href: '/comparatifs', label: 'Comparatifs' },
+    { href: '/actualites', label: 'Actualités' },
     { href: '/produits', label: 'Produits' },
   ],
   legal: [

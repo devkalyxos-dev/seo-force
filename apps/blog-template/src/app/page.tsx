@@ -1,10 +1,16 @@
-import { ArticleCard, CategoryTabs, Newsletter, ProductCard, ArrowRightIcon } from '@/components';
-import { getBlog, getArticlesWithImages, getFeaturedArticleWithImage, getProducts, getAffiliateId } from '@/lib/supabase';
+import { ArticleCard, CategoryTabs, Newsletter, ProductCard, LongScrollArticleCard, Pagination, ArrowRightIcon } from '@/components';
+import { getBlog, getArticlesWithImages, getFeaturedArticleWithImage, getProducts, getAffiliateId, getArticlesCount } from '@/lib/supabase';
 import { getBlogConfig } from '@/lib/config';
 import { getBlogBackgrounds } from '@/lib/unsplash';
 import Link from 'next/link';
 
-export default async function HomePage() {
+const ARTICLES_PER_PAGE = 12;
+
+interface HomePageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const config = getBlogConfig();
   const blog = await getBlog(config.slug);
 
@@ -12,20 +18,33 @@ export default async function HomePage() {
     return null;
   }
 
-  const [featuredArticle, articles, products, affiliateId] = await Promise.all([
-    getFeaturedArticleWithImage(blog.id),
-    getArticlesWithImages(blog.id, { limit: 6, offset: 1 }),
+  // Get current page from searchParams
+  const params = await searchParams;
+  const currentPage = params.page ? parseInt(params.page) : 1;
+  const offset = (currentPage - 1) * ARTICLES_PER_PAGE;
+
+  // For first page, offset by 1 to skip featured article
+  const articlesOffset = currentPage === 1 ? 1 : offset;
+  const articlesLimit = currentPage === 1 ? ARTICLES_PER_PAGE - 1 : ARTICLES_PER_PAGE;
+
+  const [featuredArticle, articles, products, affiliateId, totalCount] = await Promise.all([
+    currentPage === 1 ? getFeaturedArticleWithImage(blog.id) : null,
+    getArticlesWithImages(blog.id, { limit: articlesLimit, offset: articlesOffset }),
     getProducts(blog.id, { limit: 4 }),
     getAffiliateId(blog.id),
+    getArticlesCount(blog.id),
   ]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / ARTICLES_PER_PAGE);
 
   // Get unique backgrounds for this blog
   const backgrounds = getBlogBackgrounds(config.slug, blog.niche);
 
   return (
     <>
-      {/* Hero - Featured Article with Unsplash Background */}
-      {featuredArticle && (
+      {/* Hero - Featured Article with Unsplash Background (only on first page) */}
+      {currentPage === 1 && featuredArticle && (
         <section
           className="relative pt-16 pb-16 md:pt-24 md:pb-24 overflow-hidden"
           style={{
@@ -45,29 +64,35 @@ export default async function HomePage() {
       {/* Category Tabs */}
       <CategoryTabs />
 
-      {/* Latest Articles Grid */}
-      <section className="py-20 bg-gradient-to-b from-white to-neutral-50">
-        <div className="max-w-7xl mx-auto px-6">
+      {/* Long-Scrolling Articles Section */}
+      <section className="py-16 bg-gradient-to-b from-white to-neutral-50">
+        <div className="max-w-5xl mx-auto px-6">
+          {/* Section Header */}
           <div className="flex items-end justify-between mb-10">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 mb-2 block">Actualités</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 mb-2 block">
+                Articles
+              </span>
               <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">
-                Derniers articles
+                {currentPage === 1 ? 'Derniers articles' : `Articles - Page ${currentPage}`}
               </h2>
             </div>
-            <Link
-              href="/archives"
-              className="text-xs font-medium text-neutral-500 hover:text-black flex items-center gap-1 transition-colors"
-            >
-              Voir tout
-              <ArrowRightIcon className="w-3 h-3" />
-            </Link>
+            {totalPages > 1 && (
+              <span className="text-sm text-neutral-500">
+                {totalCount} article{totalCount > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
+          {/* Long-Scrolling Article List */}
           {articles.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-8">
-              {articles.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+            <div className="space-y-8">
+              {articles.map((article, index) => (
+                <LongScrollArticleCard
+                  key={article.id}
+                  article={article}
+                  priority={index < 3}
+                />
               ))}
             </div>
           ) : (
@@ -76,11 +101,20 @@ export default async function HomePage() {
               <p className="text-sm mt-2">Revenez bientôt !</p>
             </div>
           )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              baseUrl="/"
+            />
+          )}
         </div>
       </section>
 
-      {/* Popular Products */}
-      {products.length > 0 && affiliateId && (
+      {/* Popular Products (only on first page) */}
+      {currentPage === 1 && products.length > 0 && affiliateId && (
         <section className="py-24 bg-gradient-to-br from-primary-50/50 to-white relative overflow-hidden">
           {/* Decorative element */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -95,6 +129,13 @@ export default async function HomePage() {
                   Nos recommandations du moment.
                 </p>
               </div>
+              <Link
+                href="/produits"
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+              >
+                Tous les produits
+                <ArrowRightIcon className="w-4 h-4" />
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -111,8 +152,10 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Newsletter with Dark Background */}
-      <Newsletter blogId={blog.id} backgroundImage={backgrounds.dark} />
+      {/* Newsletter with Dark Background (only on first page) */}
+      {currentPage === 1 && (
+        <Newsletter blogId={blog.id} backgroundImage={backgrounds.dark} />
+      )}
     </>
   );
 }
