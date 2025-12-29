@@ -41,6 +41,7 @@ export default function ArticleDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState<'content' | 'seo'>('content');
+  const [blogUrl, setBlogUrl] = useState<string>('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -63,6 +64,11 @@ export default function ArticleDetailPage() {
 
         const data = await response.json();
         setArticle(data);
+
+        // Set blog URL based on environment
+        const isLocal = window.location.hostname === 'localhost';
+        const baseUrl = isLocal ? 'http://localhost:3000' : `https://${data.blogs?.slug}.vercel.app`;
+        setBlogUrl(`${baseUrl}/${data.category}/${data.slug}`);
 
         setFormData({
           title: data.title,
@@ -224,9 +230,9 @@ export default function ArticleDetailPage() {
                 Publier
               </button>
             )}
-            {article.status === 'published' && article.blogs?.slug && (
+            {blogUrl && (
               <a
-                href={`https://${article.blogs.slug}.vercel.app/${article.category}/${article.slug}`}
+                href={blogUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"

@@ -53,6 +53,7 @@ export default function BlogDetailPage() {
     domain: '',
     amazon_affiliate_id: '',
   });
+  const [blogUrl, setBlogUrl] = useState<string>('');
 
   useEffect(() => {
     async function loadBlog() {
@@ -63,6 +64,11 @@ export default function BlogDetailPage() {
         const data = await response.json();
         setBlog(data.blog);
         setAffiliateIds(data.affiliateIds || []);
+
+        // Set blog URL based on environment
+        const isLocal = window.location.hostname === 'localhost';
+        const baseUrl = isLocal ? 'http://localhost:3000' : `https://${data.blog.slug}.vercel.app`;
+        setBlogUrl(baseUrl);
 
         const amazonId = data.affiliateIds?.find(
           (a: AffiliateId) => a.partner_id === 'amazon'
@@ -216,17 +222,19 @@ export default function BlogDetailPage() {
             </svg>
             Importer des produits
           </Link>
-          <a
-            href={`https://${blog.slug}.vercel.app`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Voir le blog
-          </a>
+          {blogUrl && (
+            <a
+              href={blogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Voir le blog
+            </a>
+          )}
         </div>
       </div>
 

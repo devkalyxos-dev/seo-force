@@ -16,9 +16,17 @@ export async function POST(request: NextRequest) {
     publish,
   } = body;
 
-  if (!blog_id || !type || !subject) {
+  if (!blog_id || !type) {
     return NextResponse.json(
-      { error: 'blog_id, type et subject sont requis' },
+      { error: 'blog_id et type sont requis' },
+      { status: 400 }
+    );
+  }
+
+  // Subject is required unless products are selected
+  if (!subject && (!product_ids || product_ids.length === 0)) {
+    return NextResponse.json(
+      { error: 'Sujet requis si aucun produit n\'est sélectionné' },
       { status: 400 }
     );
   }
@@ -58,11 +66,18 @@ export async function POST(request: NextRequest) {
       products = productData || [];
     }
 
+    // Generate subject from product if not provided
+    let finalSubject = subject;
+    if (!finalSubject && products.length > 0) {
+      // Use the first product's title as the base for the subject
+      finalSubject = products[0].title;
+    }
+
     // Generate the article
     const generatedArticle = await generateArticle({
       blog,
       type,
-      subject,
+      subject: finalSubject,
       products,
       keywords: keywords || [],
       tone: tone || 'professional',
