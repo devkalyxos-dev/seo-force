@@ -1,13 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getBlog, getLegalPage } from '@/lib/supabase';
-import { getBlogConfig } from '@/lib/config';
+import { getBlogConfig, OWNER_INFO, AFFILIATE_DISCLOSURE } from '@/lib/config';
 import { CheckIcon } from '@/components';
 
 export const metadata: Metadata = {
   title: 'À propos',
   description: 'Découvrez notre mission et notre équipe.',
 };
+
+// Replace old hardcoded addresses with current config value
+function replaceOldAddresses(content: string, newAddress: string): string {
+  return content.replace(/2220 Route De Bories, 97160 Le Moule, Guadeloupe/g, newAddress);
+}
 
 export default async function AProposPage() {
   const config = getBlogConfig();
@@ -41,7 +46,7 @@ export default async function AProposPage() {
         {hasCustomContent ? (
           <div
             className="prose prose-neutral max-w-none"
-            dangerouslySetInnerHTML={{ __html: legalPage.content }}
+            dangerouslySetInnerHTML={{ __html: replaceOldAddresses(legalPage.content, OWNER_INFO.address.full) }}
           />
         ) : (
           <div className="space-y-8">
@@ -96,25 +101,40 @@ export default async function AProposPage() {
 
             <section className="bg-neutral-50 rounded-xl p-6">
               <h2 className="text-xl font-semibold text-neutral-900 mb-3">
-                Programme Partenaires Amazon
+                {AFFILIATE_DISCLOSURE.amazon.program}
               </h2>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                {blog.name} participe au Programme Partenaires d'Amazon EU, un
+                {blog.name} participe au {AFFILIATE_DISCLOSURE.amazon.program}, un
                 programme d'affiliation conçu pour permettre à des sites de percevoir
-                une rémunération grâce à la création de liens vers Amazon.fr. En tant
-                que Partenaire Amazon, nous réalisons un bénéfice sur les achats
-                remplissant les conditions requises.
+                une rémunération grâce à la création de liens vers Amazon.fr. {AFFILIATE_DISCLOSURE.amazon.disclosure}
               </p>
+            </section>
+
+            <section className="bg-blue-50 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-neutral-900 mb-3">
+                Qui sommes-nous ?
+              </h2>
+              <p className="text-sm text-neutral-600 leading-relaxed mb-2">
+                Ce site est édité par <strong>{OWNER_INFO.tradeName}</strong>, entreprise spécialisée dans
+                le commerce en ligne et les services de marketing digital.
+              </p>
+              <ul className="text-sm text-neutral-600 space-y-1">
+                <li><strong>SIRET</strong> : {OWNER_INFO.siret}</li>
+                <li><strong>Siège</strong> : {OWNER_INFO.address.full}</li>
+              </ul>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-4">
                 Contact
               </h2>
-              <p className="text-neutral-600 leading-relaxed">
+              <p className="text-neutral-600 leading-relaxed mb-4">
                 Vous avez des questions, des suggestions ou souhaitez collaborer
                 avec nous ? N'hésitez pas à nous contacter. Nous serons ravis
                 d'échanger avec vous.
+              </p>
+              <p className="text-neutral-600">
+                <strong>Email</strong> : {OWNER_INFO.email}
               </p>
             </section>
           </div>

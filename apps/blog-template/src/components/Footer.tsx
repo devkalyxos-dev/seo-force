@@ -75,21 +75,21 @@ export function Footer({ blog }: FooterProps) {
                 className="text-neutral-400 hover:text-black transition-colors"
                 aria-label="Twitter"
               >
-                <TwitterIcon className="w-[18px] h-[18px]" />
+                <TwitterIcon className="w-5 h-5 shrink-0" />
               </a>
               <a
                 href="#"
                 className="text-neutral-400 hover:text-black transition-colors"
                 aria-label="Instagram"
               >
-                <InstagramIcon className="w-[18px] h-[18px]" />
+                <InstagramIcon className="w-5 h-5 shrink-0" />
               </a>
               <a
                 href="#"
                 className="text-neutral-400 hover:text-black transition-colors"
                 aria-label="YouTube"
               >
-                <YoutubeIcon className="w-[18px] h-[18px]" />
+                <YoutubeIcon className="w-5 h-5 shrink-0" />
               </a>
             </div>
           </div>
